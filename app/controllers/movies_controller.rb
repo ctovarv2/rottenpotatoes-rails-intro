@@ -14,21 +14,46 @@ class MoviesController < ApplicationController
    
     @all_ratings = Movie.get_ratings_collection
     
-    if(params[:ratings] != nil)
-      @movies = Movie.where("rating = ?", params[:ratings].keys)
-    else
+    if(params[:ratings] != nil) # Filters movies based on :ratings given
+      @movies = Movie.where(:rating => params[:ratings].keys)
+      session[:ratings] = params[:ratings]
+      @default_checked_ratings = session[:ratings].keys
+      
+    elsif(session[:ratings] != nil) # Filters movies based on :ratings from a session
+      @movies = Movie.where(:rating => session[:ratings].keys)
+      @default_checked_ratings = session[:ratings].keys
+      redirect_needed = true
+      
+    else # displays all movies with all ratings
       @movies = Movie.all
-    end
-    
-    # Sorts depending on parameter(title)
-    if(params[:sort] == 'movie.title')
-      @movies = Movie.order(:title)
+      @default_checked_ratings = @all_ratings
       
     end
-    # Sorts depending on parameter(release date)
-    if(params[:sort] == 'movie.release_date')
-      @movies = Movie.order(:release_date)
+    
+    if(params[:sort] == 'movie.title') #Sorts movies based on title
+      @movies = @movies.order(:title)
+      session[:sort] = params[:sort]
+      
+    elsif(params[:sort] == 'movie.release_date') #Sorts movies based on release date
+      @movies = @movies.order(:release_date)
+      session[:sort] = params[:sort]
+      
+    elsif(session[:sort] == 'movie.title')  #Sorts movies based on title from session
+      @movies = @movies.order(:title)
+      redirect_needed = true
+      
+    elsif(session[:sort] == 'movie.release_date')  #Sorts movies based on release date from session
+      @movies = @movies.order(:release_date)
+      redirect_needed = true
+      
     end
+    
+    
+    # Does a redirect only when using params from a session, keeps url intact 
+    if(redirect_needed)
+      redirect_to(movies_path(:ratings => session[:ratings], :sort => session[:sort]))
+    end
+    
   end
 
   def new
